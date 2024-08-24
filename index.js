@@ -15,6 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 const saltKey = process.env.SALT_KEY;
 const merchantId = process.env.MERCHANT_ID;
 const port = process.env.PORT || 8000; // Default to 8000 if PORT is not set
+const frontendURL = process.env.FRONTEND_URL;
+const backendURL = process.env.BACKEND_URL;
 
 // Routes
 app.get('/', (req, res) => {
@@ -30,7 +32,7 @@ app.post('/order', async (req, res) => {
             merchantTransactionId: transactionId,
             name,
             amount: amount * 100, // Convert to smallest currency unit
-            redirectUrl: `https://satyalok-payment-gateway-backend.onrender.com/status?id=${transactionId}`,
+            redirectUrl: `${backendURL}/status?id=${transactionId}`,
             redirectMode: "POST",
             mobileNumber: phone,
             paymentInstrument: {
@@ -91,9 +93,9 @@ app.post('/status', async (req, res) => {
 
         const response = await axios(options);
         if (response.data.success === true) {
-            return res.redirect(`/success`);
+            return res.redirect(`${frontendURL}/success`);
         } else {
-            return res.redirect(`/failure`);
+            return res.redirect(`${frontendURL}/failure`);
         }
     } catch (error) {
         console.error("Error in /status:", error);
