@@ -2,59 +2,54 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const axios = require('axios');
-require('dotenv').config()
+require('dotenv').config();
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({
-    extended: true
-}));
+app.use(express.urlencoded({ extended: true }));
 
+// Environment variables
+const saltKey = process.env.SALT_KEY;
+const merchantId = process.env.MERCHANT_ID;
+const port = process.env.PORT || 8000; // Default to 8000 if PORT is not set
 
-let salt_key = process.env.SALT_KEY;
-let merchant_id = process.env.MERCHANT_ID;
-
+// Routes
 app.get('/', (req, res) => {
-    res.send("Hello World!")
-})
-
+    res.send("Hello World!");
+});
 
 app.post('/order', async (req, res) => {
-
     try {
-
-        let merchantTransactionId = req.body.transactionId
+        const { transactionId, name, amount, phone } = req.body;
 
         const data = {
-            merchantId: merchant_id,
-            merchantTransactionId: merchantTransactionId,
-            name: req.body.name,
-            amount: req.body.amount * 100,
-            redirectUrl: `http://localhost:8000/status?id=${merchantTransactionId}`,
+            merchantId,
+            merchantTransactionId: transactionId,
+            name,
+            amount: amount * 100, // Convert to smallest currency unit
+            redirectUrl: `http://localhost:${port}/status?id=${transactionId}`,
             redirectMode: "POST",
-            mobileNumber: req.body.phone,
+            mobileNumber: phone,
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
-        }
+        };
 
+        const payload = JSON.stringify(data);
+        const payloadMain = Buffer.from(payload).toString('base64');
+        const keyIndex = 1;
+        const stringToHash = `${payloadMain}/pg/v1/pay${saltKey}`;
+        const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
+        const checksum = `${sha256}###${keyIndex}`;
 
-        const payload = JSON.stringify(data)
-        const payloadMain = Buffer.from(payload).toString('base64')
-        const keyIndex = 1
-        const string = payloadMain + '/pg/v1/pay' + salt_key;
-        const sha256 = crypto.createHash('sha256').update(string).digest('hex');
-        const checksum = sha256 + '###' + keyIndex;
-
-
-        // const prod_URL = "https://api.phonepe.com/apis/hermes/pg/v1/pay"
-        const prod_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay"
+        const prodURL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
 
         const options = {
             method: 'POST',
-            url: prod_URL,
+            url: prodURL,
             headers: {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
@@ -63,68 +58,50 @@ app.post('/order', async (req, res) => {
             data: {
                 request: payloadMain
             }
-        }
+        };
 
-        await axios(options).then(function (response) {
-
-            console.log(response.data)
-            return res.json(response.data)
-
-        }).catch(function (error) {
-            console.log(error)
-        })
+        const response = await axios(options);
+        console.log(response.data);
+        return res.json(response.data);
 
     } catch (error) {
-        console.log(error)
+        console.error("Error in /order:", error);
+        return res.status(500).json({ error: "An error occurred while processing the order." });
     }
-
-
-})
-
+});
 
 app.post('/status', async (req, res) => {
+    try {
+        const merchantTransactionId = req.query.id;
+        const keyIndex = 1;
+        const stringToHash = `/pg/v1/status/${merchantId}/${merchantTransactionId}${saltKey}`;
+        const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
+        const checksum = `${sha256}###${keyIndex}`;
 
-    const merchantTransactionId = req.query.id
-    const merchantId = merchant_id
+        const options = {
+            method: 'GET',
+            url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,
+            headers: {
+                accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-VERIFY': checksum,
+                'X-MERCHANT-ID': merchantId
+            }
+        };
 
-
-    const keyIndex = 1
-    const string = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + salt_key;
-    const sha256 = crypto.createHash('sha256').update(string).digest('hex');
-    const checksum = sha256 + '###' + keyIndex;
-
-
-    const options = {
-        method: 'GET',
-        url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${merchantTransactionId}`,
-        headers: {
-            accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-VERIFY': checksum,
-            'X-MERCHANT-ID': `${merchantId}`
-        }
-
-
-    }
-
-
-    axios.request(options).then(function (response) {
+        const response = await axios(options);
         if (response.data.success === true) {
-            const url = 'http://localhost:5173/success'
-            return res.redirect(url)
+            return res.redirect(`http://localhost:5173/success`);
         } else {
-            const url = 'http://localhost:5173/failure'
-            return res.redirect(url)
+            return res.redirect(`http://localhost:5173/failure`);
         }
+    } catch (error) {
+        console.error("Error in /status:", error);
+        return res.status(500).json({ error: "An error occurred while checking the payment status." });
+    }
+});
 
-    }).catch(function (error) {
-        console.log(error)
-    })
-
-
-})
-
-
-app.listen(8000, () => {
-    console.log("Server is running on port 8000")
-})
+// Start server
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
