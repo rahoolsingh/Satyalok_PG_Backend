@@ -113,7 +113,7 @@ app.post('/status', async (req, res) => {
             const url = 'http://localhost:5173/success'
             return res.redirect(url)
         } else {
-            const url = 'http://localhost:5173/fail'
+            const url = 'http://localhost:5173/failure'
             return res.redirect(url)
         }
 
