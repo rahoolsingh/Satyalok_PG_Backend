@@ -17,8 +17,8 @@ const initiatePayment = async (req, res) => {
             merchantTransactionId: transactionId,
             name,
             amount: amount * 100, // Convert to smallest currency unit
-            redirectUrl: `${frontendURL}/status?id=${transactionId}`,
-            redirectMode: "POST",
+            redirectUrl: `${frontendURL}/status/${transactionId}`,
+            redirectMode: "GET",
             mobileNumber: phone,
             paymentInstrument: {
                 type: "PAY_PAGE",
