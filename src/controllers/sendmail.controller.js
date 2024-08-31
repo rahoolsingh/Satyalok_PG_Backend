@@ -1,4 +1,4 @@
-import { sendMail } from "../services/sendmail.service";
+import { sendMail } from "../services/sendmail.service.js";
 
 const testmail = async (req, res) => {
     const email = "rahulksingh3907@gmail.com";
