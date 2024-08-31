@@ -13,7 +13,7 @@ dotenv.config();
 app.use(
     cors({
         origin: process.env.FRONTEND_URL,
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+        methods: "GET,POST",
     })
 );
 app.use(express.json());
