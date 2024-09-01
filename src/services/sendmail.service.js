@@ -23,13 +23,6 @@ const sendMail = (to, subject, text, html) => {
     return new Promise((resolve, reject) => {
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                console.log(
-                    process.env.SMTP_EMAIL,
-                    process.env.SMTP_PASSWORD,
-                    process.env.SMTP_HOST,
-                    process.env.SMTP_PORT
-                );
-
                 console.error("Error sending email:", error);
                 reject(error);
             } else {
