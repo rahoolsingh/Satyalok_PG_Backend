@@ -1,9 +1,8 @@
 import nodemailer from "nodemailer";
 
-// Configure Nodemailer with Zoho SMTP settings
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST, // Correct SMTP server for Zoho Mail
-    port: process.env.SMTP_PORT, // Correct port for secure SMTP (SSL)
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
     secure: true, // Use true for SSL
     auth: {
         user: process.env.SMTP_EMAIL,
@@ -11,13 +10,14 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendMail = (to, subject, text, html) => {
+const sendMail = (to, subject, text, html, attachments) => {
     const mailOptions = {
-        from: process.env.SMTP_EMAIL, // sender address
-        to, // list of receivers
-        subject, // subject line
-        text, // plain text body
-        html, // html body
+        from: process.env.SMTP_EMAIL,
+        to,
+        subject,
+        text,
+        html,
+        attachments, // Add attachments here
     };
 
     return new Promise((resolve, reject) => {
@@ -33,4 +33,20 @@ const sendMail = (to, subject, text, html) => {
     });
 };
 
-export { sendMail };
+const sendWithAttachment = async (to, subject, text, html, filename, path) => {
+    try {
+        const attachment = [
+            {
+                filename: filename,
+                path: path,
+            },
+        ];
+
+        await sendMail(to, subject, text, html, attachment);
+        console.log("Email sent successfully with attachment!");
+    } catch (error) {
+        console.error("Failed to send email with attachment:", error);
+    }
+};
+
+export { sendMail, sendWithAttachment };

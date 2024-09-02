@@ -5,7 +5,10 @@ import {
     initiatePayment,
 } from "./src/controllers/payment.controller.js";
 import cors from "cors";
-import { testmail } from "./src/controllers/sendmail.controller.js";
+import {
+    testmail,
+    testMailWithAttachment,
+} from "./src/controllers/sendmail.controller.js";
 
 const app = express();
 
@@ -34,6 +37,8 @@ app.post("/order", initiatePayment);
 app.get("/status", checkStatus);
 
 app.get("/testmail", testmail);
+
+app.get("/testmailwithattachment", testMailWithAttachment);
 
 app.listen(PORT, () => {
     console.log("Server running on port 8000");

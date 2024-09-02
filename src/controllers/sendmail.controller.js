@@ -1,4 +1,5 @@
-import { sendMail } from "../services/sendmail.service.js";
+import generateCertificate, { deleteCertificate } from "../services/generateCertificate.service.js";
+import { sendMail, sendWithAttachment } from "../services/sendmail.service.js";
 
 const testmail = async (req, res) => {
     const email = "rahulksingh3907@gmail.com";
@@ -13,4 +14,25 @@ const testmail = async (req, res) => {
     }
 };
 
-export { testmail };
+const testMailWithAttachment = async (req, res) => {
+    try {
+        await generateCertificate();
+
+        await sendWithAttachment(
+            "rahulksingh3907@gmail.com",
+            "Test Email with Attachment",
+            "Hello, this is a test email with attachment!",
+            "<p>Hello, this is a test email with attachment!</p>",
+            "output.pdf",
+            "./output.pdf"
+        );
+        
+        await deleteCertificate();
+
+        res.send("Email sent with attachment!");
+    } catch (error) {
+        res.status(500).send("Email failed to send with attachment.");
+    }
+};
+
+export { testmail, testMailWithAttachment };
