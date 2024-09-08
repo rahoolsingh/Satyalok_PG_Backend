@@ -9,6 +9,7 @@ import {
     testmail,
     testMailWithAttachment,
 } from "./src/controllers/sendmail.controller.js";
+import connectDB from "./src/db/index.js";
 
 const app = express();
 
@@ -40,6 +41,8 @@ app.get("/testmail", testmail);
 
 app.get("/testmailwithattachment", testMailWithAttachment);
 
-app.listen(PORT, () => {
-    console.log("Server running on port 8000");
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
 });
