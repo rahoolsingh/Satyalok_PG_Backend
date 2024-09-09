@@ -57,30 +57,38 @@ const paymentConfirmation = async (req, res) => {
         updatedData = await Donation.findOne({
             merchantTransactionId: req.query.id,
         });
+        if (!updatedData.sendMail) {
+            if (updatedData.taxBenefit) {
+                await generateCertificate(updatedData);
 
-        if (updatedData.taxBenefit) {
-            await generateCertificate(updatedData);
-
-            await sendWithAttachment(
-                updatedData.email,
-                "Tax Benefit Donation Receipt From Satyalok - A New Hope",
-                "Thank you for your donation!",
-                `<p>Thank you for your donation!
+                await sendWithAttachment(
+                    updatedData.email,
+                    "Tax Benefit Donation Receipt From Satyalok - A New Hope",
+                    "Thank you for your donation!",
+                    `<p>Thank you for your donation!
                 ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>
                 <p>Please find the attached donation receipt for your reference.</p>`,
 
-                "donation-receipt.pdf",
-                `./Donation_Receipt.pdf`
-            );
+                    "donation-receipt.pdf",
+                    `./Donation_Receipt.pdf`
+                );
 
-            await deleteCertificate();
-        } else {
-            await sendMail(
-                updatedData.email,
-                "Donation Receipt From Satyalok - A New Hope",
-                "Thank you for your donation!",
-                `<p>Thank you for your donation!
+                await deleteCertificate();
+            } else {
+                await sendMail(
+                    updatedData.email,
+                    "Donation Receipt From Satyalok - A New Hope",
+                    "Thank you for your donation!",
+                    `<p>Thank you for your donation!
                 ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>`
+                );
+            }
+
+            await Donation.updateOne(
+                { merchantTransactionId: req.query.id },
+                {
+                    sendMail: true,
+                }
             );
         }
     }

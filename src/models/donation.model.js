@@ -46,6 +46,17 @@ const donationSchema = new mongoose.Schema(
         },
         panNumber: {
             type: String,
+            trim: true,
+        },
+        sendMail: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
+        resendMail: {
+            type: Boolean,
+            required: true,
+            default: false,
         },
     },
     { timestamps: true }
