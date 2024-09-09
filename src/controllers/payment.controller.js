@@ -65,7 +65,10 @@ const paymentConfirmation = async (req, res) => {
                 updatedData.email,
                 "Donation Receipt",
                 "Thank you for your donation!",
-                `<p>Thank you for your donation!</p>`,
+                `<p>Thank you for your donation!
+                ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>
+                <p>Please find the attached donation receipt for your reference.</p>`,
+
                 "donation-receipt.pdf",
                 `./Donation_Receipt.pdf`
             );
