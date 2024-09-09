@@ -63,7 +63,7 @@ const paymentConfirmation = async (req, res) => {
 
             await sendWithAttachment(
                 updatedData.email,
-                "Donation Receipt",
+                "Tax Benefit Donation Receipt From Satyalok - A New Hope",
                 "Thank you for your donation!",
                 `<p>Thank you for your donation!
                 ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>
@@ -77,7 +77,7 @@ const paymentConfirmation = async (req, res) => {
         } else {
             await sendMail(
                 updatedData.email,
-                "Donation Receipt",
+                "Donation Receipt From Satyalok - A New Hope",
                 "Thank you for your donation!",
                 `<p>Thank you for your donation!
                 ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>`
