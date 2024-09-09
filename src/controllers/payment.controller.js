@@ -4,6 +4,10 @@ import {
     paymentStatus,
 } from "../services/PhonePe/payment.service.js";
 import Donation from "../models/donation.model.js";
+import generateCertificate, {
+    deleteCertificate,
+} from "../services/generateCertificate.service.js";
+import { sendWithAttachment } from "../services/sendmail.service.js";
 
 dotenv.config();
 
@@ -40,7 +44,7 @@ const initiatePayment = async (req, res) => {
 
 const paymentConfirmation = async (req, res) => {
     const status = await paymentStatus(req.query.id);
-
+    let updatedData = {};
     if (status.success) {
         await Donation.updateOne(
             { merchantTransactionId: req.query.id },
@@ -49,7 +53,26 @@ const paymentConfirmation = async (req, res) => {
                 pgResponse: status,
             }
         );
+
+        updatedData = await Donation.findOne({
+            merchantTransactionId: req.query.id,
+        });
+
+        await generateCertificate(updatedData);
+
+        await sendWithAttachment(
+            updatedData.email,
+            "Donation Receipt",
+            "Thank you for your donation!",
+            `<p>Thank you for your donation!</p>`,
+            "donation-receipt.pdf",
+            `./Donation_Receipt.pdf`
+        );
+
+        await deleteCertificate();
     }
+
+    console.log("Payment confirmation data", updatedData);
 
     return res.redirect(`${frontendURL}/status/${req.query.id}`);
 };
