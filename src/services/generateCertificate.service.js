@@ -43,7 +43,6 @@ const generateCertificate = async ({
     merchantTransactionId,
     success,
     name,
-    amount,
     panNumber,
     pgResponse,
 }) => {
@@ -51,6 +50,8 @@ const generateCertificate = async ({
         console.error("Data mismatch in generating certificate");
         return "Data mismatch";
     }
+
+    const amount = pgResponse.data.amount; 
     const donationDate = convertToTimestamp(pgResponse.data.transactionId);
     // Create a new PDF document
     const doc = new PDFDocument({
