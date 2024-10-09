@@ -27,7 +27,11 @@ app.get("/", (req, res) => {
     if (req.query.text) {
         return res.send(`Hello, ${req.query.text}!`);
     }
-    res.send("Hello World!");
+    res.status(200).send({
+        message: "Johar",
+        commitVersion: process.env.RENDER_GIT_COMMIT,
+        alive: true,
+    });
 });
 
 app.post("/order", initiatePayment);
