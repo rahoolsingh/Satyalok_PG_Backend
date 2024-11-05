@@ -54,12 +54,12 @@ app.get("/emailTemplate", (req, res) => {
     );
 });
 
-// connectDB().then(() => {
-//     app.listen(PORT, () => {
-//         console.log(`Server running on port ${PORT}: http://localhost:${PORT}`);
-//     });
-// });
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}: http://localhost:${PORT}`);
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}: http://localhost:${PORT}`);
+    });
 });
+
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}: http://localhost:${PORT}`);
+// });
