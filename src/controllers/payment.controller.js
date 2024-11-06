@@ -65,37 +65,35 @@ const paymentConfirmation = async (req, res) => {
             merchantTransactionId: req.query.id,
         });
         if (!updatedData.sendMail) {
+            const emailTemplate = donationReceiptEmailTemplate(
+                updatedData.amount,
+                updatedData.merchantTransactionId,
+                updatedData.createdAt,
+                updatedData.pgResponse.data.transactionId,
+                updatedData.name,
+                updatedData.success,
+                updatedData.taxBenefit
+            );
+
             if (updatedData.taxBenefit) {
                 await generateCertificate(updatedData);
 
                 await sendWithAttachment(
                     updatedData.email,
                     "Tax Benefit Donation Receipt From Satyalok - A New Hope",
-                    "Thank you for your donation!",
-                    `<p>Thank you for your donation!
-                ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>
-                <p>Please find the attached donation receipt for your reference.</p>`,
-
+                    `Thank you for your donation! INR ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.`,
+                    emailTemplate,
                     `${updatedData.merchantTransactionId}.pdf`,
                     `./${updatedData.merchantTransactionId}.pdf`
                 );
 
                 await deleteFiles(updatedData.merchantTransactionId);
             } else {
-                const emailTemplate = donationReceiptEmailTemplate(
-                    updatedData.amount,
-                    updatedData.merchantTransactionId,
-                    updatedData.createdAt,
-                    "",
-                    "",
-                    updatedData.name
-                );
                 await sendMail(
                     updatedData.email,
                     "Donation Receipt From Satyalok - A New Hope",
-                    "Thank you for your donation!",
-                    `<p>Thank you for your donation!
-                ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.</p>`
+                    `Thank you for your donation! INR ${updatedData.amount} has been received from ${updatedData.name} on ${updatedData.createdAt}.`,
+                    emailTemplate
                 );
             }
 
@@ -107,8 +105,6 @@ const paymentConfirmation = async (req, res) => {
             );
         }
     }
-
-    // console.log("Payment confirmation data", updatedData);
 
     return res.redirect(`${frontendURL}/status/${req.query.id}`);
 };

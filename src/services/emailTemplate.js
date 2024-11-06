@@ -3,264 +3,533 @@ const donationReceiptEmailTemplate = (
     refNumber,
     paymentTime,
     transactionId,
-    paymentMethod,
-    donorName
+    donorName,
+    status,
+    taxBenefit
 ) => {
     return `
-        <html>
+    <!DOCTYPE html>
+<html lang="en" style="padding: 0; margin: 0">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="x-apple-disable-message-reformatting" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta content="telephone=no" name="format-detection" />
+        <title>Donation Confirmation</title>
+        <link
+            href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400i,700,700i"
+            rel="stylesheet"
+        />
+        <style type="text/css">
+            /* Inline styles from provided template */
+            /* ... (Place the styles from the original template here) ... */
+        </style>
+    </head>
     <body
         style="
-            margin: 0;
+            font-family: 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+            width: 100%;
             padding: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #e0e0e0; /* Lighter background */
-            color: #333;
-            font-size: 16px;
+            margin: 0;
+            background-color: #ffffff;
         "
     >
-        <div style="padding: 20px; text-align: center">
-            <div
-                style="
-                    max-width: 900px;
-                    margin: auto;
-                    background-color: #ffffff;
-                    border-radius: 10px;
-                    overflow: hidden;
-                    padding: 20px;
-                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
-                "
+        <div style="background-color: #ffffff">
+            <table
+                class="es-wrapper"
+                width="100%"
+                cellspacing="0"
+                cellpadding="0"
+                style="width: 100%; background-color: #ffffff"
             >
-                <!-- Header Section with Logo and Greeting -->
-                <div style="padding: 20px">
-                    <img
-                        src="https://donate.satyalok.in/assets/logo-UoDita1I.png"
-                        alt="Satyalok Logo"
-                        style="
-                            display: block;
-                            margin-bottom: 20px;
-                            margin-left: auto;
-                            margin-right: auto;
-                            height: 150px;
-                            max-width: 100%;
-                        "
-                    />
-                </div>
-                <!-- Donation Confirmation Section -->
-                <div style="padding: 10px">
-                    <h2 style="margin: 0; color: #5c6bc0; font-size: 1.2em">
-                        Dear Donor
-                        <br />
-                        Thank You for Your Donation!
-                    </h2>
-                    <p style="font-size: 0.9em; color: #555">
-                        We are grateful for your generous donation of
-                        <strong style="color: #0b8000">INR ${amount}</strong>
-                        to Satyalok. Your contribution will help us in our
-                        mission.
-                    </p>
-                </div>
-                <!-- Donation Details Section -->
-                <div
-                    style="
-                        padding: 20px;
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        text-align: left;
-                        font-size: 0.8em;
-                    "
-                >
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Donor Name</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        ${donorName}
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Donation Amount</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        INR ${amount}
-                    </span>
-
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Ref. Number</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        ${refNumber}
-                    </span>
-
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Transaction ID</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        ${transactionId}
-                    </span>
-
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Payment Time</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        ${paymentTime}
-                    </span>
-
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        <strong>Payment Method</strong>
-                    </span>
-                    <span
-                        style="
-                            padding: 7px;
-                            color: #555;
-                            border: 1px solid #000;
-                        "
-                    >
-                        ${paymentMethod}
-                    </span>
-                </div>
-                <!-- Thank You Message Section -->
-                <div style="padding: 20px; text-align: center">
-                    <img
-                        src="https://donate.satyalok.in/assets/card1-C-NOjy-6.png"
-                        alt="Thank you cover image"
-                        width="100%"
-                        style="border-radius: 10px"
-                    />
-                </div>
-                <div style="padding: 0px 20px; text-align: justify">
-                    <p style="font-size: 0.7em; font-weight: 500">
-                        Your contribution is greatly appreciated. Together, we
-                        can make a meaningful difference. Thank you for helping
-                        us move forward with our mission.
-                    </p>
-                </div>
-
-                <div style="padding: 20px; text-align: center">
-                    <a
-                        href="https://donate.satyalok.in"
-                        style="
-                            cursor: pointer;
-                            text-decoration: none;
-                            color: #3f51b5;
-                        "
-                        onmouseover="this.style.color='#1e88e5';"
-                        onmouseout="this.style.color='#3f51b5';"
-                    >
-                        Make Another Donation
-                    </a>
-                </div>
-                <hr />
-                <!-- Contact and Additional Info Section -->
-                <div style="padding: 20px; text-align: left; color: #757575">
-                    <p style="margin: 0; font-size: 0.8em">
-                        <strong>Need assistance?</strong>
-                        <br />
-                        Reach out to us at
-                        <a
-                            href="mailto:info@satyalok.in"
-                            style="
-                                color: #5c6bc0;
-                                text-decoration: none;
-                                transition: color 0.3s;
-                            "
+                <tr>
+                    <td valign="top" style="padding: 0; margin: 0">
+                        <table
+                            class="es-header"
+                            cellspacing="0"
+                            cellpadding="0"
+                            align="center"
+                            style="width: 100%; background-color: transparent"
                         >
-                            info@satyalok.in </a
-                        >.
-                    </p>
-                    <p
-                        style="
-                            margin: 5px 0;
-                            color: #555;
-                            font-size: 0.8em;
-                            margin-top: 20px;
-                        "
-                    >
-                        If you opted for a tax benefit, your certificate has
-                        been sent to your email. Please check your inbox or spam
-                        folder. For any issues, contact us at
-                        <a
-                            href="mailto:info@satyalok.in"
-                            style="
-                                color: #5c6bc0;
-                                text-decoration: none;
-                                transition: color 0.3s;
-                            "
+                            <tr>
+                                <td
+                                    align="center"
+                                    style="padding: 0; margin: 0"
+                                >
+                                    <table
+                                        class="es-header-body"
+                                        cellspacing="0"
+                                        cellpadding="0"
+                                        align="center"
+                                        style="
+                                            background-color: transparent;
+                                            width: 600px;
+                                        "
+                                    >
+                                        <tr>
+                                            <td
+                                                align="left"
+                                                style="padding: 20px"
+                                            >
+                                                <table
+                                                    width="100%"
+                                                    cellspacing="0"
+                                                    cellpadding="0"
+                                                    style="width: 100%"
+                                                >
+                                                    <tr>
+                                                        <td
+                                                            align="center"
+                                                            style="
+                                                                padding: 0;
+                                                                margin: 0;
+                                                            "
+                                                        >
+                                                            <a
+                                                                href="https://satyalok.in"
+                                                                target="_blank"
+                                                                
+                                                            >
+                                                                <img
+                                                                    src="https://res.cloudinary.com/drd5iva1i/image/upload/b_rgb:FFFFFF/v1730919455/b965f91b-321f-4ed6-97f9-1908840d5731.png"
+                                                                    alt="Satyalok"
+                                                                    style="
+                                                                        display: block;
+                                                                        border: 0;
+                                                                        width: 200px;
+                                                                        background-color: #ffffff;
+                                                                    "
+                                                                />
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td
+                                                            align="center"
+                                                            style="
+                                                                padding: 20px;
+                                                            "
+                                                        >
+                                                            <h1
+                                                                style="
+                                                                    color: #333333;
+                                                                    font-size: 24px;
+                                                                    margin: 0;
+                                                                "
+                                                            >
+                                                                Thank you for
+                                                                your donation!
+                                                            </h1>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Donation Details -->
+                        <table
+                            class="es-content"
+                            cellspacing="0"
+                            cellpadding="0"
+                            align="center"
+                            style="width: 100%"
                         >
-                            info@satyalok.in </a
-                        >.
-                    </p>
-                </div>
-                <!-- Footer Section -->
-                <div style="padding: 20px; color: #b0b0b0">
-                    <small style="font-size: 0.6em">
-                        &copy; 2024 Satyalok Team. All rights reserved.
-                    </small>
-                </div>
-            </div>
+                            <tr>
+                                <td
+                                    align="center"
+                                    style="padding: 0; margin: 0"
+                                >
+                                    <table
+                                        class="es-content-body"
+                                        style="
+                                            width: 600px;
+                                            background-color: #f7f7f7;
+                                        "
+                                    >
+                                        <tr>
+                                            <td
+                                                style="
+                                                    padding: 40px;
+                                                    background-color: #f7f7f7;
+                                                "
+                                                align="left"
+                                            >
+                                                <p
+                                                    style="
+                                                        color: #363636;
+                                                        font-size: 20px;
+                                                        line-height: 30px;
+                                                        font-weight: bold;
+                                                    "
+                                                >
+                                                    Hi ${donorName},
+                                                    <br />
+                                                    Thank you for your generous
+                                                    support!
+                                                </p>
+                                                <p
+                                                    style="
+                                                        color: #363636;
+                                                        font-size: 16px;
+                                                        line-height: 24px;
+                                                    "
+                                                >
+                                                    Your donation will help us
+                                                    in our mission, and we are
+                                                    incredibly grateful for your
+                                                    support. We are thrilled to
+                                                    have you as a part of our
+                                                    community. We hope you will
+                                                    stay connected with us. 
+                                                    <br />
+                                                    <br />
+                                                    ${
+                                                        taxBenefit
+                                                            ? "Your donation is eligible for tax benefit under section 80G of the Income Tax Act, 1961. Please find the attached certificate for the same. Your donation details are mentioned below. If you have to contact us at"
+                                                            : "Your donation details are mentioned below. If you have any questions about your donation, please feel free to contact us at"
+                                                    }
+                                                    <a
+                                                        href="mailto:info@satyalok.in"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                    >
+                                                        info@satyalok.in </a
+                                                    >.
+
+                                                    <br /><br />
+
+                                                    Regards,
+                                                    <br />
+                                                    Team Satyalok
+                                                </p>
+                                                <table
+                                                    width="100%"
+                                                    cellspacing="0"
+                                                    cellpadding="0"
+                                                    style="
+                                                        width: 100%;
+                                                        border-bottom: 1px
+                                                            dashed #323232;
+                                                        margin: 20px 0;
+                                                    "
+                                                >
+                                                    <tr>
+                                                        <td
+                                                            style="
+                                                                padding: 0;
+                                                                margin: 0;
+                                                            "
+                                                        ></td>
+                                                    </tr>
+                                                </table>
+
+                                                <!-- Donation Info -->
+                                                <!-- two col table with ref no and status -->
+                                                <table
+                                                    width="100%"
+                                                    cellspacing="0"
+                                                    cellpadding="0"
+                                                    style="width: 100%"
+                                                >
+                                                    <tbody
+                                                        style="
+                                                            font-size: 18px;
+                                                            color: #4f4f4f;
+                                                            padding-top: 15px;
+                                                        "
+                                                    >
+                                                        <tr
+                                                            style="
+                                                                padding: 0;
+                                                                margin: 0;
+                                                            "
+                                                        >
+                                                            <td
+                                                                style="
+                                                                    padding: 0;
+                                                                    margin: 0;
+                                                                "
+                                                            >
+                                                                <strong
+                                                                    >Reference
+                                                                    ID:</strong
+                                                                >
+                                                                ${refNumber}
+                                                            </td>
+                                                            <td
+                                                                style="
+                                                                    padding: 0;
+                                                                    margin: 0;
+                                                                    text-align: right;
+                                                                    ${
+                                                                        status
+                                                                            ? "color: #008000"
+                                                                            : "color: #ff0000"
+                                                                    }
+                                                                "
+                                                            >
+                                                                ${
+                                                                    status
+                                                                        ? "Success"
+                                                                        : "Failed"
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <table
+                                                    width="100%"
+                                                    cellspacing="0"
+                                                    cellpadding="0"
+                                                    style="
+                                                        width: 100%;
+                                                        border-bottom: 1px
+                                                            dashed #323232;
+                                                        margin: 20px 0;
+                                                    "
+                                                >
+                                                    <tr>
+                                                        <td
+                                                            style="
+                                                                padding: 0;
+                                                                margin: 0;
+                                                            "
+                                                        ></td>
+                                                    </tr>
+                                                </table>
+                                                <p
+                                                    style="
+                                                        color: #4f4f4f;
+                                                        font-size: 18px;
+                                                        margin: 0;
+                                                        line-height: 24px;
+                                                    "
+                                                >
+                                                    <strong
+                                                        >Date & Time:</strong
+                                                    >
+                                                    ${paymentTime}
+                                                </p>
+                                                <p
+                                                    style="
+                                                        color: #4f4f4f;
+                                                        font-size: 18px;
+                                                        margin: 0;
+                                                        line-height: 24px;
+                                                    "
+                                                >
+                                                    <strong
+                                                        >Transaction ID:</strong
+                                                    >
+                                                    ${transactionId}
+                                                </p>
+                                                <p
+                                                    style="
+                                                        color: #4f4f4f;
+                                                        font-size: 18px;
+                                                        margin: 0;
+                                                        line-height: 24px;
+                                                    "
+                                                >
+                                                    <strong
+                                                        >Opted Tax Benefit:</strong
+                                                    >
+                                                    ${
+                                                        taxBenefit
+                                                            ? "Yes (Please find the attached certificate)"
+                                                            : "No"
+                                                    }
+                                                </p>
+                                                
+
+                                                <div
+                                                    style="
+                                                        font-size: 18px;
+                                                        color: #4f4f4f;
+                                                        padding-top: 15px;
+                                                    "
+                                                >
+                                                    <strong
+                                                        style="color: #008000"
+                                                        >Total Donation: INR
+                                                        ${amount}</strong
+                                                    >
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td
+                                    align="center"
+                                    style="padding: 0; margin: 0"
+                                >
+                                <table
+                                    class="es-content-body"
+                                    style="
+                                        width: 600px;
+                                        background-color: #f7f7f7;
+                                    "
+                                >
+                                    <tr>
+
+                                        <td
+                                            style="
+                                                background-color: #f7f7f7;
+                                            "
+                                            align="left"
+                                        >
+                                        <a href="https://maps.app.goo.gl/LGb2dZXFRAye2CJ8A" target="_blank"
+                                            style="text-decoration: none; color: #1376c8;">
+                                            
+                                        <img src="https://res.cloudinary.com/drd5iva1i/image/upload/v1730918082/Banner_yglwra.png" alt="Rating Banner" style="display: block; border: 0; width: 100%; background-color: #ffffff;" />
+                                        </a>
+                                        </td>
+
+                                    </tr>
+                                </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Footer -->
+                        <table
+                            class="es-footer"
+                            cellspacing="0"
+                            cellpadding="0"
+                            align="center"
+                            style="width: 100%; background-color: transparent"
+                        >
+                            <tr>
+                                <td
+                                    align="center"
+                                    style="padding: 0; margin: 0"
+                                >
+                                    <table
+                                        class="es-footer-body"
+                                        style="
+                                            background-color: #f7f7f7;
+                                            width: 600px;
+                                        "
+                                    >
+                                        <tr>
+                                            <td
+                                                align="center"
+                                                style="padding: 0px 40px 40px"
+                                            >
+                                                <p
+                                                    style="
+                                                        font-size: 12px;
+                                                        border-top: #828282 1px
+                                                            solid;
+                                                        color: #828282;
+                                                        line-height: 18px;
+                                                        text-align: justify;
+                                                        padding-top: 10px;
+                                                    "
+                                                >
+                                                    Satyalok or representatives
+                                                    will NEVER ask you for your
+                                                    personal information i.e.
+                                                    your bank account details,
+                                                    password, PIN, CVV, OTP etc.
+                                                    For your own safety, DO NOT
+                                                    share these details with
+                                                    anyone over phone, SMS or
+                                                    email.
+                                                    <a
+                                                        href="mailto:info@satyalok.in"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                        >info@satyalok.in</a
+                                                    >.
+                                                </p>
+                                                <p
+                                                    style="
+                                                        font-size: 12px;
+                                                        color: #828282;
+                                                        line-height: 18px;
+                                                    "
+                                                >
+                                                    Need assistance? Reach out
+                                                    to us at
+                                                    <a
+                                                        href="mailto:info@satyalok.in"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                        >info@satyalok.in</a
+                                                    >.
+                                                </p>
+
+                                                <p
+                                                    style="
+                                                        font-size: 12px;
+                                                        color: #828282;
+                                                        line-height: 18px;
+                                                    "
+                                                >
+                                                    Follow us on social media:
+                                                    <a
+                                                        href="https://www.facebook.com/satyalok.official"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                        >Facebook</a
+                                                    >
+                                                    |
+                                                    <a
+                                                        href="https://www.linkedin.com/company/satyalok/"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                        >LinkedIn</a
+                                                    >
+                                                    |
+                                                    <a
+                                                        href="https://instagram.com/satyalok.official"
+                                                        style="
+                                                            text-decoration: none;
+                                                            color: #1376c8;
+                                                        "
+                                                        >Instagram</a
+                                                    >
+                                                </p>
+                                                <p
+                                                    style="
+                                                        font-size: 12px;
+                                                        color: #828282;
+                                                        line-height: 18px;
+                                                    "
+                                                >
+                                                    ©2024 - Satyalok. All rights
+                                                    reserved.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </div>
     </body>
 </html>
