@@ -20,6 +20,8 @@ app.use(
         methods: "GET,POST",
     })
 );
+
+console.log("CORS enabled for:", process.env.FRONTEND_URL.split(","));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
