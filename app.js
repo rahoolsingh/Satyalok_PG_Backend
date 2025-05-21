@@ -16,12 +16,12 @@ const app = express();
 dotenv.config();
 app.use(
     cors({
-        origin: [process.env.FRONTEND_URL.split(",")],
+        origin: [process.env.CORS_URLS.split(",")],
         methods: "GET,POST",
     })
 );
 
-console.log("CORS enabled for:", process.env.FRONTEND_URL.split(","));
+console.log("CORS enabled for:", process.env.CORS_URLS.split(","));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
