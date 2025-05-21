@@ -55,28 +55,32 @@ const initiatePayment = async (req, res) => {
 
 const initiateQuizChampPayment = async (req, res) => {
     const merchantTransactionId = `QC25${Date.now()}${randomChar()}`;
-    const donation = new Donation({
+    const amount = req.body.group === "A" ? 1 : req.body.group === "B" ? 2 : 0;
+
+    const donation = new QuizChamp({
         photo: req.files.photo[0].url,
         name: req.body.name,
         fatherName: req.body.fatherName,
         motherName: req.body.motherName,
         email: req.body.email,
-        mobile: req.body.phone,
+        mobile: req.body.mobile,
         group: req.body.group,
         class: req.body.class,
         schoolName: req.body.schoolName,
         mediumOfStudy: req.body.mediumOfStudy,
         aadhaarNumber: req.body.aadhaarNumber,
         aadhaarCardPhoto: req.files.aadhaarCardPhoto[0].url,
-        amount: req.body.amount,
         merchantTransactionId: merchantTransactionId,
+        amount: amount,
     });
+
+
 
     try {
         const response = await createOrder(
             req.body.name,
-            req.body.amount,
-            req.body.phone,
+            amount,
+            req.body.mobile,
             merchantTransactionId
         );
         await donation.save();
