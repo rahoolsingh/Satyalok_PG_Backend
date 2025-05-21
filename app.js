@@ -5,6 +5,7 @@ import {
     initiatePayment,
     initiateQuizChampPayment,
     paymentConfirmation,
+    processPayment,
 } from "./src/controllers/payment.controller.js";
 import cors from "cors";
 import connectDB from "./src/db/index.js";
@@ -41,6 +42,8 @@ app.get("/", (req, res) => {
 app.post("/order", initiatePayment);
 
 app.post("/quizChampOrder", fileUpload, initiateQuizChampPayment);
+
+app.post("/process-payment", processPayment);
 
 app.get("/status", checkStatus);
 

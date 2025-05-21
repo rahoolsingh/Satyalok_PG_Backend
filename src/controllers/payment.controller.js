@@ -18,6 +18,7 @@ import QuizChamp from "../models/quizchamp.model.js";
 dotenv.config();
 
 const frontendURL = process.env.FRONTEND_URL;
+const quizchampUrl = process.env.QUIZCHAMP_URL;
 
 const randomChar = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -74,22 +75,66 @@ const initiateQuizChampPayment = async (req, res) => {
         amount: amount,
     });
 
-
-
     try {
-        const response = await createOrder(
-            req.body.name,
-            amount,
-            req.body.mobile,
-            merchantTransactionId
-        );
         await donation.save();
-        return res.json(response);
+        return res.json({
+            message: "Proceed to payment to complete the registration.",
+            data: {
+                instrumentResponse: {
+                    redirectInfo: {
+                        url: `${frontendURL}/payment-redirects/${merchantTransactionId}`,
+                        method: "GET",
+                    },
+                },
+            },
+        });
     } catch (error) {
         console.error("Error in /order:", error);
         return res.status(500).json({
             error: "An error occurred while initiating the payment.",
         });
+    }
+};
+
+const processPayment = async (req, res) => {
+    const { id: txnId } = req.query;
+
+    if (!txnId) {
+        return res.status(400).json({
+            success: false,
+            message: "Transaction ID is required.",
+        });
+    } else if (txnId.startsWith("QC")) {
+        const record = await QuizChamp.findOne({
+            merchantTransactionId: txnId,
+        });
+
+        if (!record) {
+            return res.status(404).json({
+                success: false,
+                message: "Transaction not found.",
+            });
+        }
+
+        // if payment is already successful, redirect to quizchamp URL
+        if (record.success) {
+            return res.redirect(`${quizchampUrl}/status/${txnId}`);
+        }
+        // if payment is not successful, initiate payment
+        try {
+            const response = await createOrder(
+                record.name,
+                record.amount,
+                record.mobile,
+                txnId
+            );
+            return res.json(response);
+        } catch (error) {
+            console.error("Error in /order:", error);
+            return res.status(500).json({
+                error: "An error occurred while initiating the payment.",
+            });
+        }
     }
 };
 
@@ -150,7 +195,7 @@ const paymentConfirmation = async (req, res) => {
         }
     }
 
-    if (status.success && req.query.id.startsWith("QC")) {
+    if (status.success && req.query.id.startsWith("QC25")) {
         await QuizChamp.updateOne(
             { merchantTransactionId: req.query.id },
             {
@@ -188,7 +233,11 @@ const paymentConfirmation = async (req, res) => {
         }
     }
 
-    return res.redirect(`https://quizchamp.satyalok.in/status/${req.query.id}`);
+    if (req.query.id.startsWith("QC25")) {
+        return res.redirect(`${quizchampUrl}/status/${req.query.id}`);
+    }
+
+    return res.redirect(`${frontendURL}/status/${req.query.id}`);
 };
 
 const checkStatus = async (req, res) => {
@@ -200,6 +249,7 @@ const checkStatus = async (req, res) => {
 export {
     initiatePayment,
     initiateQuizChampPayment,
+    processPayment,
     checkStatus,
     paymentConfirmation,
 };
