@@ -10,10 +10,13 @@ import {
 } from "../services/generateCertificate.service.js";
 import { sendMail, sendWithAttachment } from "../services/sendmail.service.js";
 import {
+    admitCardEmailTemplate,
     donationReceiptEmailTemplate,
     paymentEmailTemplate,
 } from "../services/emailTemplate.js";
 import QuizChamp from "../models/quizchamp.model.js";
+import generateAdmitCard from "../services/generateAdmitCard.service.js";
+import Roll from "../models/roll.model.js";
 
 dotenv.config();
 
@@ -57,6 +60,17 @@ const initiatePayment = async (req, res) => {
 const initiateQuizChampPayment = async (req, res) => {
     const merchantTransactionId = `QC25${Date.now()}${randomChar()}`;
     const amount = req.body.group === "A" ? 1 : req.body.group === "B" ? 2 : 0;
+
+    // check email duplicate
+    const existingRecord = await QuizChamp.findOne({
+        email: req.body.email,
+    });
+    if (existingRecord && existingRecord.success) {
+        return res.status(400).json({
+            success: false,
+            message: "Email already registered for Quiz Champ",
+        });
+    }
 
     const donation = new QuizChamp({
         photo: req.files.photo[0].url,
@@ -196,10 +210,17 @@ const paymentConfirmation = async (req, res) => {
     }
 
     if (status.success && req.query.id.startsWith("QC25")) {
+        const rollEntry = await Roll.findByIdAndUpdate(
+            { _id: "quizChampRoll" },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
+        );
+
         await QuizChamp.updateOne(
             { merchantTransactionId: req.query.id },
             {
                 success: true,
+                roll: rollEntry.seq,
                 pgResponse: status,
             }
         );
@@ -231,6 +252,42 @@ const paymentConfirmation = async (req, res) => {
                 }
             );
         }
+
+        // admit card generation and email
+        const admitCardResponse = await generateAdmitCard(
+            updatedData.merchantTransactionId,
+            status.success,
+            updatedData.name,
+            updatedData.roll,
+            updatedData.aadhaarNumber,
+            updatedData.fatherName,
+            updatedData.motherName,
+            updatedData.schoolName,
+            updatedData.mediumOfStudy,
+            updatedData.group,
+            updatedData.class,
+            updatedData.photo,
+            status
+        );
+        if (admitCardResponse !== "Payment not verified") {
+            const admitCardEmail = admitCardEmailTemplate(
+                updatedData.roll,
+                updatedData.name,
+                updatedData.group
+            );
+
+            await sendWithAttachment(
+                updatedData.email,
+                "Admit Card for Quiz Competition",
+                `Your admit card for the quiz competition is attached. Please keep it safe.`,
+                admitCardEmail,
+                admitCardResponse,
+                admitCardResponse
+            );
+        }
+
+        // remove the admit card PDF and QR code image after sending email
+        await deleteFiles(updatedData.merchantTransactionId);
     }
 
     if (req.query.id.startsWith("QC25")) {

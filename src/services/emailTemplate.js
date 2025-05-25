@@ -723,4 +723,47 @@ const paymentEmailTemplate = (
 `;
 };
 
-export { donationReceiptEmailTemplate, paymentEmailTemplate };
+// admit card as attachment and share the roll, name, group
+const admitCardEmailTemplate = (rollNumber, name, group) => {
+    return `
+<!DOCTYPE html>
+<html lang="en" style="padding: 0; margin: 0">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Admit Card Notification</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet" />
+</head>
+
+<body style="font-family: 'Source Sans Pro', sans-serif; margin: 0; padding: 0;">
+    <div style="max-width: 600px; margin: auto; padding: 30px; background-color: #ffffff; border-radius: 8px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://res.cloudinary.com/drd5iva1i/image/upload/b_rgb:FFFFFF/v1730919455/b965f91b-321f-4ed6-97f9-1908840d5731.png" alt="Quiz Champ Logo" style="max-width: 160px;" />
+        </div>
+        <h2 style="color: #2e86de; text-align: center;">Your Admit Card is Attached</h2>
+        <p style="font-size: 16px; color: #333;">Dear <strong>${name}</strong>,</p>
+        <p style="font-size: 16px; color: #333;">
+            Your admit card for Quiz Champ 2.0 is attached with this email.
+        </p>
+        <p style="font-size: 16px; color: #333;">
+            <strong>Roll Number:</strong> ${rollNumber}<br />
+            <strong>Group:</strong> ${group}
+        </p>
+        <p style="font-size: 15px; color: #666; margin-top: 20px;">
+            Please download and print the admit card before attending the event.
+        </p>
+        <p style="font-size: 15px; color: #333;">
+            Regards,<br />
+            Quiz Champ Team,<br />
+            Satyalok - A New Hope
+        </p>
+    </div>
+</body>
+</html>
+`;
+};
+
+export { donationReceiptEmailTemplate, paymentEmailTemplate, admitCardEmailTemplate };

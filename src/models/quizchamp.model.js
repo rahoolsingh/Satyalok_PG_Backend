@@ -12,6 +12,11 @@ const quizChampSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        roll: {
+            type: Number,
+            unique: true,
+            sparse: true, // allows null/undefined initially
+        },
         fatherName: {
             type: String,
             required: true,
@@ -27,6 +32,7 @@ const quizChampSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
+            lowercase: true,
         },
         mobile: {
             type: Number,
