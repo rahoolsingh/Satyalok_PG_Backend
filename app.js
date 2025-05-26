@@ -11,6 +11,7 @@ import cors from "cors";
 import connectDB from "./src/db/index.js";
 import { donationReceiptEmailTemplate } from "./src/services/emailTemplate.js";
 import fileUpload from "./src/middleware/fileUpload.middleware.js";
+import { sendEmailVerificationOTP, verifyEmailOTP, verifyToken } from "./src/controllers/verification.controller.js";
 
 const app = express();
 
@@ -41,13 +42,19 @@ app.get("/", (req, res) => {
 
 app.post("/order", initiatePayment);
 
-app.post("/quizChampOrder", fileUpload, initiateQuizChampPayment);
+app.post("/quizChampOrder", verifyToken, fileUpload, initiateQuizChampPayment);
 
 app.post("/process-payment", processPayment);
 
 app.get("/status", checkStatus);
 
 app.get("/confirmation", paymentConfirmation);
+
+app.post("/send-verification-code", sendEmailVerificationOTP);
+
+app.post("/verify-code", verifyEmailOTP);
+
+
 
 // app.get("/emailTemplate", (req, res) => {
 //     res.send(

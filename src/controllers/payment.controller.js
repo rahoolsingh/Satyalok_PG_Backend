@@ -59,13 +59,16 @@ const initiatePayment = async (req, res) => {
 
 const initiateQuizChampPayment = async (req, res) => {
     const merchantTransactionId = `QC25${Date.now()}${randomChar()}`;
-    const amount = req.body.group === "A" ? 15 : req.body.group === "B" ? 20 : 0;
+    const amount =
+        req.body.group === "A" ? 15 : req.body.group === "B" ? 20 : 0;
 
     // check email duplicate
     const existingRecord = await QuizChamp.findOne({
         email: req.body.email,
+        success: true,
     });
-    if (existingRecord && existingRecord.success) {
+
+    if (existingRecord) {
         return res.status(400).json({
             success: false,
             message: "Email already registered for Quiz Champ",
@@ -282,8 +285,11 @@ const paymentConfirmation = async (req, res) => {
                 `Your admit card for the quiz competition is attached. Please keep it safe.`,
                 admitCardEmail,
                 [
-                    {filename: `${updatedData.roll}.pdf`, path: admitCardResponse},
-                    {filename: `Instructions.pdf`, path: `./must_read.pdf`},
+                    {
+                        filename: `${updatedData.roll}.pdf`,
+                        path: admitCardResponse,
+                    },
+                    { filename: `Instructions.pdf`, path: `./must_read.pdf` },
                 ]
             );
         }

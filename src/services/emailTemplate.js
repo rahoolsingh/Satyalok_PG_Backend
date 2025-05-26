@@ -766,4 +766,43 @@ const admitCardEmailTemplate = (rollNumber, name, group) => {
 `;
 };
 
-export { donationReceiptEmailTemplate, paymentEmailTemplate, admitCardEmailTemplate };
+// OTP email template
+const otpEmailTemplate = (otp) => {
+    return `
+            <!DOCTYPE html>
+            <html lang="en" style="padding: 0; margin: 0">
+            <head>
+                <meta charset="UTF-8" />
+                <meta name="x-apple-disable-message-reformatting" />
+                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                <meta name="format-detection" content="telephone=no" />
+                <title>Verification OTP</title>
+                <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet" />
+                <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet" />
+            </head>
+
+            <body style="font-family: 'Source Sans Pro', sans-serif; margin: 0; padding: 0;">
+                <div style="max-width: 600px; margin: auto; padding: 30px; background-color: #ffffff; border-radius: 8px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <img src="https://res.cloudinary.com/drd5iva1i/image/upload/b_rgb:FFFFFF/v1730919455/b965f91b-321f-4ed6-97f9-1908840d5731.png" alt="Quiz Champ Logo" style="max-width: 160px;" />
+                    </div>
+                    <h2 style="color: #2e86de; text-align: center;">Verification OTP</h2>
+                    <p style="font-size: 16px; color: #333;">
+                        Your verification OTP is:
+                    </p>
+                    <h3 style="font-size: 24px; color: #2e86de; text-align: center;">${otp}</h3>
+                    <p style="font-size: 15px; color: #666; margin-top: 20px;">
+                        Please use this OTP to verify your account.
+                    </p>
+                    <p style="font-size: 15px; color: #333;">
+                        Regards,<br />
+                        Quiz Champ Team,<br />
+                        Satyalok - A New Hope
+                    </p>
+                </div>  
+            </body>
+            </html>
+`;
+}
+
+export { donationReceiptEmailTemplate, paymentEmailTemplate, admitCardEmailTemplate, otpEmailTemplate };
