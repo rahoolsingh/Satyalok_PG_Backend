@@ -281,8 +281,10 @@ const paymentConfirmation = async (req, res) => {
                 "Admit Card for Quiz Competition",
                 `Your admit card for the quiz competition is attached. Please keep it safe.`,
                 admitCardEmail,
-                admitCardResponse,
-                admitCardResponse
+                [
+                    {filename: `${updatedData.roll}.pdf`, path: admitCardResponse},
+                    {filename: `Instructions.pdf`, path: `./must_read.pdf`},
+                ]
             );
         }
 

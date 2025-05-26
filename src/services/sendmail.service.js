@@ -33,14 +33,9 @@ const sendMail = (to, subject, text, html, attachments) => {
     });
 };
 
-const sendWithAttachment = async (to, subject, text, html, filename, path) => {
+const sendWithAttachment = async (to, subject, text, html, filesDetail) => {
     try {
-        const attachment = [
-            {
-                filename: filename,
-                path: path,
-            },
-        ];
+        const attachment = filesDetail;
 
         await sendMail(to, subject, text, html, attachment);
         // console.log("Email sent successfully with attachment!");
