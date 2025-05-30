@@ -19,6 +19,8 @@ import {
 import adminRouter from "./src/routes/admin.route.js";
 import cookieParser from "cookie-parser";
 
+import "./src/cron/server.js"
+
 const app = express();
 
 dotenv.config();
