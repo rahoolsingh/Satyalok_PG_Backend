@@ -12,9 +12,6 @@ import {
 
 cron.schedule("0 */5 * * *", runVerificationJob); // every 5 hours
 
-// run once right now
-runVerificationJob(); // initial run
-
 async function runVerificationJob() {
     console.log("⏳ Running payment verification retry job...");
     sendMobileLog("Payment verification retry job started.");
