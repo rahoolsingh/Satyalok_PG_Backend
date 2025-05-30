@@ -11,15 +11,22 @@ import cors from "cors";
 import connectDB from "./src/db/index.js";
 import { donationReceiptEmailTemplate } from "./src/services/emailTemplate.js";
 import fileUpload from "./src/middleware/fileUpload.middleware.js";
-import { sendEmailVerificationOTP, verifyEmailOTP, verifyToken } from "./src/controllers/verification.controller.js";
+import {
+    sendEmailVerificationOTP,
+    verifyEmailOTP,
+    verifyToken,
+} from "./src/controllers/verification.controller.js";
+import adminRouter from "./src/routes/admin.route.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 dotenv.config();
 app.use(
     cors({
-        origin: [process.env.CORS_URLS.split(",")],
+        origin: process.env.CORS_URLS.split(","),
         methods: "GET,POST",
+        credentials: true,
     })
 );
 
@@ -40,6 +47,10 @@ app.get("/", (req, res) => {
     });
 });
 
+app.use(cookieParser());
+
+app.use("/admin", adminRouter);
+
 app.post("/order", initiatePayment);
 
 app.post("/quizChampOrder", verifyToken, fileUpload, initiateQuizChampPayment);
@@ -53,22 +64,6 @@ app.get("/confirmation", paymentConfirmation);
 app.post("/send-verification-code", sendEmailVerificationOTP);
 
 app.post("/verify-code", verifyEmailOTP);
-
-
-
-// app.get("/emailTemplate", (req, res) => {
-//     res.send(
-//         donationReceiptEmailTemplate(
-//             100,
-//             "123456",
-//             "2021-09-01",
-//             "123456",
-//             "PhonePe",
-//             "John Doe",
-//             true
-//         )
-//     );
-// });
 
 connectDB().then(() => {
     app.listen(PORT, () => {
