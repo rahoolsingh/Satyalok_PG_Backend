@@ -66,7 +66,7 @@ const adminLogin = async (req, res) => {
             success: true,
             message: "Login successful.",
         });
-        
+
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({
@@ -104,9 +104,13 @@ const listStudents = async (req, res) => {
         // Fetch students from the database
         const students = await QuizChamp.find({});
 
+        const filteredStudents = students.filter(
+            (student) => student.success === true
+        );
+
         // Respond with the list of students
         res.status(200).json({
-            data: students,
+            data: filteredStudents,
             success: true,
             message: "Students fetched successfully.",
         });
