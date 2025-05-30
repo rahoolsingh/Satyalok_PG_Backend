@@ -5,19 +5,19 @@ import QuizChamp from "../models/quizchamp.model.js";
 
 import cron from "node-cron";
 import { paymentConfirmation } from "../controllers/payment.controller.js";
+import {
+    sendMobileLog,
+    sendMobileLogWithError,
+} from "../services/mobileLog.service.js";
 
 cron.schedule("0 */5 * * *", runVerificationJob); // every 5 hours
 
 // run once right now
 runVerificationJob(); // initial run
 
-// cron.schedule("0 */5 * * *", () => runVerificationJob()); // every 5 hours
-cron.schedule("52 23 * * *", () => {
-    console.log("Running every 5 minutes");
-});
-
 async function runVerificationJob() {
     console.log("⏳ Running payment verification retry job...");
+    sendMobileLog("Payment verification retry job started.");
 
     const pendingDonations = await Donation.find({
         success: false,
@@ -37,8 +37,12 @@ async function runVerificationJob() {
                 { verifiedFailed: true }
             );
             console.log(
-                `🚫 Marked ${record.merchantTransactionId} as verifiedFailed after 2 retries`
+                `🚫 Marked ${record.merchantTransactionId} as verifiedFailed after 5 retries`
             );
+            sendMobileLog(
+                `Marked ${record.merchantTransactionId} as verifiedFailed after 5 retries`
+            );
+
             return;
         }
 
@@ -50,6 +54,9 @@ async function runVerificationJob() {
                 `❌ Error fetching status for ${record.merchantTransactionId}:`,
                 err
             );
+            sendMobileLogWithError(
+                `Error fetching status for ${record.merchantTransactionId}: ${err.message}`
+            );
             return;
         }
 
@@ -57,6 +64,11 @@ async function runVerificationJob() {
             console.warn(
                 `⚠️ Invalid status response for ${record.merchantTransactionId}:`,
                 status
+            );
+            sendMobileLogWithError(
+                `Invalid status response for ${
+                    record.merchantTransactionId
+                }: ${JSON.stringify(status)}`
             );
             return;
         }
@@ -72,6 +84,9 @@ async function runVerificationJob() {
                     `❌ Error in paymentConfirmation for ${record.merchantTransactionId}:`,
                     err
                 );
+                sendMobileLogWithError(
+                    `Error in paymentConfirmation for ${record.merchantTransactionId}: ${err.message}`
+                );
             }
         } else {
             await Model.updateOne(
@@ -80,6 +95,9 @@ async function runVerificationJob() {
             );
             console.log(
                 `🔁 Retry count increased for ${record.merchantTransactionId}`
+            );
+            sendMobileLog(
+                `Retry count increased for ${record.merchantTransactionId}`
             );
         }
     };
@@ -93,4 +111,5 @@ async function runVerificationJob() {
     }
 
     console.log("✅ Verification retry job completed.");
+    sendMobileLog("Verification retry job completed.");
 }
