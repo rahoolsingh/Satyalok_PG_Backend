@@ -121,20 +121,14 @@ const generateAdmitCard = async (
 
         // Add participant photo try-catch if not worked let it be empty
         try {
-            //check if photoPath exists if not skip adding photo
-            if (!fs.existsSync(photoPath)) {
-                console.warn(
-                    "Photo path does not exist, skipping photo addition."
-                );
-            } else {
-                doc.image(`.${photoPath}`, 395, 190, {
-                    width: 150,
-                    height: 170,
-                });
-            }
+            doc.image(`.${photoPath}`, 395, 190, {
+                width: 150,
+                height: 170,
+            });
         } catch (err) {
             console.error("Error adding photo:", err);
             // Optionally add a placeholder or leave it empty
+            
         }
 
         // Finalize PDF
