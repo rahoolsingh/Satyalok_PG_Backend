@@ -13,7 +13,7 @@ import {
 cron.schedule("0 */5 * * *", runVerificationJob); // every 5 hours
 
 // run at 18:30 every day
-cron.schedule("30 18 * * *", runVerificationJob); // every day at 6:30 PM
+cron.schedule("20 13 * * *", runVerificationJob); // every day at 6:30 PM
 
 // current time 
 console.log("Current time:", new Date().toLocaleString());
