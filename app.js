@@ -19,7 +19,8 @@ import {
 import adminRouter from "./src/routes/admin.route.js";
 import cookieParser from "cookie-parser";
 
-import "./src/cron/server.js"
+import "./src/cron/server.js";
+import verifyAdmin from "./src/middleware/verifyAdmin.middleware.js";
 
 const app = express();
 
@@ -55,7 +56,7 @@ app.use("/admin", adminRouter);
 
 app.post("/order", initiatePayment);
 
-app.post("/quizChampOrder", verifyToken, fileUpload, initiateQuizChampPayment);
+app.post("/quizChampOrder", verifyAdmin, fileUpload, initiateQuizChampPayment);
 
 app.post("/process-payment", processPayment);
 
