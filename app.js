@@ -23,6 +23,7 @@ import "./src/cron/server.js";
 import verifyAdmin from "./src/middleware/verifyAdmin.middleware.js";
 import {
     getParticipantData,
+    getParticipantDataBulk,
     getRollNumberWithEmail,
 } from "./src/controllers/result.controller.js";
 
@@ -76,6 +77,8 @@ app.post("/verify-code", verifyEmailOTP);
 app.post("/get-roll-number", getRollNumberWithEmail);
 
 app.post("/get-participant-data", getParticipantData);
+
+app.post("/get-participant-data-bulk", getParticipantDataBulk);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
