@@ -15,6 +15,8 @@ cron.schedule("0 */5 * * *", runVerificationJob); // every 5 hours
 // run at 18:30 every day
 cron.schedule("30 16 * * *", runVerificationJob); // every day at 6:30 PM
 
+cron.schedule("0 */6 * * *", runDonationMailResendJob, { timezone: "Asia/Kolkata" }); // every 6 hours
+
 // current time
 console.log("Current time:", new Date().toLocaleString());
 
@@ -109,7 +111,7 @@ async function runVerificationJob() {
 }
 
 // fucntion to check if success is true and send mail if not sent: run on start and then every 6 hours
-cron.schedule("0 */6 * * *", async () => { // runs when server starts and then every 6 hours
+async function runDonationMailResendJob() {
     console.log("⏳ Running donation mail resend job...");
     sendMobileLog("Donation mail resend job started.");
 
@@ -145,7 +147,7 @@ cron.schedule("0 */6 * * *", async () => { // runs when server starts and then e
     console.log("✅ Donation mail resend job completed.");
     sendMobileLog("Donation mail resend job completed.");
 
-}, {
-    scheduled: true, timezone: "Asia/Kolkata", runOnInit: true
 }
-);
+
+// run on start
+runDonationMailResendJob();
