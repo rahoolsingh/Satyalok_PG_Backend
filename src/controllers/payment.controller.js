@@ -336,6 +336,8 @@ const checkStatus = async (req, res) => {
         if (createdAt) {
             status.createdAt = createdAt;
         }
+
+        return res.json(status);
     } catch (error) {
         console.error("Error in /status:", error);
         return res.status(500).json({
@@ -343,7 +345,6 @@ const checkStatus = async (req, res) => {
         });
     }
 
-    return res.json(status);
 };
 
 export {
