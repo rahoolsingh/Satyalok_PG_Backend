@@ -971,4 +971,6 @@ export {
     resendDonationReceipt,
     adminForgotPassword,
     adminResetPassword,
+    checkAdminAuth,
+    generate80GCertificate,
 };
