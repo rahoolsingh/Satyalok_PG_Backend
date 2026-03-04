@@ -80,6 +80,13 @@ const donationSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        externalTransactionId: {
+            type: String,
+            trim: true,
+        },
+        donationDate: {
+            type: Date,
+        },
     },
     { timestamps: true },
 );

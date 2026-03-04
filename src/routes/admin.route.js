@@ -13,6 +13,8 @@ import {
     resendDonationReceipt,
     adminForgotPassword,
     adminResetPassword,
+    checkAdminAuth,
+    generate80GCertificate,
 } from "../controllers/admin.controller.js";
 import Admin from "../models/admin.model.js";
 import verifyAdmin from "../middleware/verifyAdmin.middleware.js";
@@ -42,6 +44,14 @@ router.post(
     verifyAdmin,
     resendDonationReceipt,
 );
+router.get(
+    "/donations/:id/80g-certificate",
+    verifyAdmin,
+    generate80GCertificate,
+);
+
+// Auth check (for frontend page refresh guard)
+router.get("/me", verifyAdmin, checkAdminAuth);
 
 //get function to create a new admin
 router.post("/create", async (req, res) => {

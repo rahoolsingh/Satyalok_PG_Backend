@@ -364,6 +364,11 @@ const markAttendance = async (req, res) => {
     }
 };
 
+const checkAdminAuth = async (req, res) => {
+    // If request reaches here, verifyAdmin middleware already passed
+    res.status(200).json({ success: true, message: "Authenticated." });
+};
+
 const getDonations = async (req, res) => {
     try {
         const {
@@ -373,27 +378,31 @@ const getDonations = async (req, res) => {
             minAmount,
             maxAmount,
             paymentMethod,
+            status, // "success" | "failed"
         } = req.query;
+
         let query = { isDeleted: { $ne: true } };
+
+        // Default date range: last 7 days if no dates provided
+        const end = endDate ? new Date(endDate) : new Date();
+        end.setHours(23, 59, 59, 999);
+        const start = startDate
+            ? new Date(startDate)
+            : new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+        start.setHours(0, 0, 0, 0);
+        query.createdAt = { $gte: start, $lte: end };
 
         if (search) {
             const orConditions = [
                 { name: { $regex: search, $options: "i" } },
                 { email: { $regex: search, $options: "i" } },
                 { merchantTransactionId: { $regex: search, $options: "i" } },
+                { externalTransactionId: { $regex: search, $options: "i" } },
             ];
-
             if (!isNaN(search)) {
                 orConditions.push({ mobile: Number(search) });
             }
-
             query.$or = orConditions;
-        }
-
-        if (startDate || endDate) {
-            query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
         }
 
         if (minAmount || maxAmount) {
@@ -406,11 +415,55 @@ const getDonations = async (req, res) => {
             query.paymentMethod = paymentMethod;
         }
 
-        const donations = await Donation.find(query).sort({ createdAt: -1 });
+        if (status === "success") {
+            query.success = true;
+        } else if (status === "failed") {
+            query.success = false;
+        }
+
+        // Only send required fields — exclude raw pg response to keep payload light
+        const projection = {
+            name: 1,
+            email: 1,
+            mobile: 1,
+            amount: 1,
+            merchantTransactionId: 1,
+            externalTransactionId: 1,
+            success: 1,
+            taxBenefit: 1,
+            panNumber: 1,
+            paymentMethod: 1,
+            createdByAdmin: 1,
+            donationDate: 1,
+            createdAt: 1,
+        };
+
+        const donations = await Donation.find(query, projection).sort({
+            createdAt: -1,
+        });
+
+        // Compute summary stats
+        const successDonations = donations.filter((d) => d.success);
+        const totalAmount = successDonations.reduce(
+            (sum, d) => sum + (d.amount || 0),
+            0,
+        );
+        const avgAmount =
+            successDonations.length > 0
+                ? Math.round(totalAmount / successDonations.length)
+                : 0;
 
         res.status(200).json({
             success: true,
             data: donations,
+            stats: {
+                total: donations.length,
+                successCount: successDonations.length,
+                failedCount: donations.length - successDonations.length,
+                totalAmount,
+                avgAmount,
+            },
+            dateRange: { start, end },
             message: "Donations fetched successfully.",
         });
     } catch (error) {
@@ -422,6 +475,228 @@ const getDonations = async (req, res) => {
     }
 };
 
+const generate80GCertificate = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const donation = await Donation.findById(id);
+
+        if (!donation) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Donation not found." });
+        }
+
+        if (!donation.taxBenefit || !donation.panNumber) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "This donation is not eligible for an 80G certificate.",
+            });
+        }
+
+        const PDFDocument = (await import("pdfkit")).default;
+        const doc = new PDFDocument({ size: "A4", margin: 50 });
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="80G_Certificate_${donation.merchantTransactionId}.pdf"`,
+        );
+        doc.pipe(res);
+
+        const donationDateStr = new Date(
+            donation.donationDate || donation.createdAt,
+        ).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        });
+
+        // Header
+        doc.fontSize(20)
+            .font("Helvetica-Bold")
+            .fillColor("#1a1a2e")
+            .text("Satyalok - A New Hope", { align: "center" });
+        doc.fontSize(11)
+            .font("Helvetica")
+            .fillColor("#555")
+            .text("Donation Receipt & 80G Tax Exemption Certificate", {
+                align: "center",
+            });
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y)
+            .lineTo(545, doc.y)
+            .strokeColor("#ddd")
+            .lineWidth(1)
+            .stroke();
+        doc.moveDown(1);
+
+        // Certificate heading
+        doc.fontSize(15)
+            .font("Helvetica-Bold")
+            .fillColor("#1a1a2e")
+            .text("Certificate of Donation", { align: "center" });
+        doc.moveDown(0.5);
+        doc.fontSize(10)
+            .font("Helvetica")
+            .fillColor("#555")
+            .text("Under Section 80G of the Income Tax Act, 1961", {
+                align: "center",
+            });
+        doc.moveDown(1.5);
+
+        // Donor details table
+        const tableLeft = 50;
+        const valueLeft = 240;
+        const rowHeight = 24;
+        const rows = [
+            ["Donor Name", donation.name],
+            ["PAN Number", donation.panNumber],
+            [
+                "Donation Amount",
+                `INR ${donation.amount?.toLocaleString("en-IN")} (Rupees ${amountInWords(donation.amount)} Only)`,
+            ],
+            ["Donation Date", donationDateStr],
+            [
+                "Payment Mode",
+                (donation.paymentMethod || "PhonePe")
+                    .replace("_", " ")
+                    .toUpperCase(),
+            ],
+            [
+                "Transaction ID",
+                donation.externalTransactionId ||
+                    donation.merchantTransactionId,
+            ],
+        ];
+
+        rows.forEach(([label, value], i) => {
+            const y = doc.y;
+            doc.fontSize(10)
+                .font("Helvetica-Bold")
+                .fillColor("#333")
+                .text(label + ":", tableLeft, y, { width: 180 });
+            doc.fontSize(10)
+                .font("Helvetica")
+                .fillColor("#111")
+                .text(value, valueLeft, y, { width: 300 });
+            doc.moveDown(0.5);
+        });
+
+        doc.moveDown(1);
+        doc.moveTo(50, doc.y)
+            .lineTo(545, doc.y)
+            .strokeColor("#ddd")
+            .lineWidth(1)
+            .stroke();
+        doc.moveDown(1);
+
+        doc.fontSize(10)
+            .font("Helvetica")
+            .fillColor("#555")
+            .text(
+                "This receipt certifies that the above-mentioned donor has made a charitable contribution to Satyalok - A New Hope, a registered charitable organization. This donation is eligible for tax deduction under Section 80G of the Income Tax Act, 1961.",
+                { align: "justify" },
+            );
+
+        doc.moveDown(2);
+        doc.fontSize(10)
+            .font("Helvetica-Bold")
+            .fillColor("#333")
+            .text("Authorized Signatory", 50);
+        doc.fontSize(10)
+            .font("Helvetica")
+            .fillColor("#555")
+            .text("Satyalok - A New Hope", 50);
+        doc.moveDown(0.5);
+        doc.fontSize(9)
+            .fillColor("#aaa")
+            .text(
+                `Generated on: ${new Date().toLocaleDateString("en-IN")}`,
+                50,
+            );
+
+        doc.end();
+    } catch (error) {
+        console.error("Error generating 80G certificate:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to generate certificate.",
+        });
+    }
+};
+
+// Helper: basic number to words for certificate
+function amountInWords(amount) {
+    const ones = [
+        "",
+        "One",
+        "Two",
+        "Three",
+        "Four",
+        "Five",
+        "Six",
+        "Seven",
+        "Eight",
+        "Nine",
+        "Ten",
+        "Eleven",
+        "Twelve",
+        "Thirteen",
+        "Fourteen",
+        "Fifteen",
+        "Sixteen",
+        "Seventeen",
+        "Eighteen",
+        "Nineteen",
+    ];
+    const tens = [
+        "",
+        "",
+        "Twenty",
+        "Thirty",
+        "Forty",
+        "Fifty",
+        "Sixty",
+        "Seventy",
+        "Eighty",
+        "Ninety",
+    ];
+
+    if (!amount || amount === 0) return "Zero";
+    const convert = (n) => {
+        if (n < 20) return ones[n];
+        if (n < 100)
+            return (
+                tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "")
+            );
+        if (n < 1000)
+            return (
+                ones[Math.floor(n / 100)] +
+                " Hundred" +
+                (n % 100 ? " " + convert(n % 100) : "")
+            );
+        if (n < 100000)
+            return (
+                convert(Math.floor(n / 1000)) +
+                " Thousand" +
+                (n % 1000 ? " " + convert(n % 1000) : "")
+            );
+        if (n < 10000000)
+            return (
+                convert(Math.floor(n / 100000)) +
+                " Lakh" +
+                (n % 100000 ? " " + convert(n % 100000) : "")
+            );
+        return (
+            convert(Math.floor(n / 10000000)) +
+            " Crore" +
+            (n % 10000000 ? " " + convert(n % 10000000) : "")
+        );
+    };
+    return convert(Math.round(amount));
+}
+
 const createOfflineDonation = async (req, res) => {
     try {
         const {
@@ -432,6 +707,8 @@ const createOfflineDonation = async (req, res) => {
             paymentMethod,
             panNumber,
             taxBenefit,
+            externalTransactionId,
+            donationDate,
         } = req.body;
 
         if (!name || !email || !amount || !mobile) {
@@ -441,16 +718,25 @@ const createOfflineDonation = async (req, res) => {
             });
         }
 
+        if (taxBenefit && !panNumber) {
+            return res.status(400).json({
+                success: false,
+                message: "PAN number is required for 80G tax benefit.",
+            });
+        }
+
         const newDonation = new Donation({
             name,
             email,
             amount: Number(amount),
             mobile: Number(mobile),
             merchantTransactionId: `OFFLINE_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            externalTransactionId: externalTransactionId || null,
+            donationDate: donationDate ? new Date(donationDate) : new Date(),
             success: true,
             createdByAdmin: true,
             paymentMethod: paymentMethod || "cash",
-            panNumber,
+            panNumber: panNumber || null,
             taxBenefit: taxBenefit || false,
             sendMail: true,
             pgResponse: { adminCreated: true },
