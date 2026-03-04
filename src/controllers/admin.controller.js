@@ -5,10 +5,14 @@ import { sendMail, sendWithAttachment } from "../services/sendmail.service.js";
 import {
     admitCardEmailTemplate,
     paymentEmailTemplate,
+    otpEmailTemplate,
+    donationReceiptEmailTemplate,
 } from "../services/emailTemplate.js";
 import generateAdmitCard, {
     deleteFiles,
 } from "../services/generateAdmitCard.service.js";
+import Verification from "../models/verification.model.js";
+import Donation from "../models/donation.model.js";
 
 const adminLogin = async (req, res) => {
     const { email, password } = req.body;
@@ -40,14 +44,78 @@ const adminLogin = async (req, res) => {
             });
         }
 
-        // Generate token
+        // Generate OTP
+        const generatedOtp = Math.floor(
+            100000 + Math.random() * 900000,
+        ).toString();
+
+        // Check if an OTP already exists for this email
+        let verificationRecord = await Verification.findOne({ email });
+
+        if (verificationRecord) {
+            // Update the existing record with the new OTP
+            verificationRecord.otp = generatedOtp;
+            verificationRecord.createdAt = Date.now();
+        } else {
+            // Create a new record
+            verificationRecord = new Verification({
+                email: email,
+                otp: generatedOtp,
+            });
+        }
+        await verificationRecord.save();
+
+        // Send OTP via email
+        const emailTemplate = otpEmailTemplate(generatedOtp);
+        await sendMail(
+            email,
+            "Admin Login OTP - Satyalok",
+            `Your OTP is ${generatedOtp}`,
+            emailTemplate,
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "OTP sent to your email.",
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const verifyAdminOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    try {
+        const verificationRecord = await Verification.findOne({ email, otp });
+
+        if (!verificationRecord) {
+            return res.status(400).json({ message: "Invalid or expired OTP." });
+        }
+
+        // Find admin to generate token
+        const admin = await Admin.findOne({ email });
+        if (!admin) {
+            return res.status(400).json({ message: "Admin not found." });
+        }
+
         const token = admin.generateAuthToken();
 
-        // Update last login time
+        // Update last login
         admin.lastLogin = Date.now();
         await admin.save();
 
-        // Set token in cookies
+        // Delete verification record
+        await Verification.deleteOne({ email, otp });
+
         res.cookie("satTkn", token, {
             secure: process.env.NODE_ENV === "production" ? true : false,
             httpOnly: true,
@@ -55,19 +123,12 @@ const adminLogin = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         });
 
-        // Respond with admin data and token
         res.status(200).json({
-            // data: {
-            //     id: admin._id,
-            //     name: admin.name,
-            //     email: admin.email,
-            //     lastLogin: admin.lastLogin,
-            // },
             success: true,
             message: "Login successful.",
         });
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("OTP Verification error:", error);
         res.status(500).json({
             success: false,
             message: "Internal server error.",
@@ -104,7 +165,7 @@ const listStudents = async (req, res) => {
         const students = await QuizChamp.find({});
 
         const filteredStudents = students.filter(
-            (student) => student.success === true
+            (student) => student.success === true,
         );
 
         // Respond with the list of students
@@ -151,14 +212,14 @@ const resendEmail = async (req, res) => {
                 student.createdAt,
                 student.pgResponse?.data?.transactionId || "N/A",
                 student.name,
-                student.success
+                student.success,
             );
 
             await sendMail(
                 student.email,
                 "Payment Receipt From Satyalok - A New Hope",
                 `Thank you for your payment! INR ${student.amount} has been received from ${student.name} on ${student.createdAt}.`,
-                emailTemplate
+                emailTemplate,
             );
 
             // Update sendMail flag
@@ -177,14 +238,14 @@ const resendEmail = async (req, res) => {
             student.createdAt,
             student.pgResponse?.data?.transactionId || "N/A",
             student.name,
-            student.success
+            student.success,
         );
 
         await sendMail(
             student.email,
             "Payment Receipt From Satyalok - A New Hope",
             `Thank you for your payment! INR ${student.amount} has been received from ${student.name} on ${student.createdAt}.`,
-            emailTemplate
+            emailTemplate,
         );
 
         // Generate and send admit card
@@ -201,14 +262,14 @@ const resendEmail = async (req, res) => {
             student.group,
             student.class,
             student.photo,
-            student.pgResponse
+            student.pgResponse,
         );
 
         if (admitCardResponse !== "Payment not verified") {
             const admitCardEmail = admitCardEmailTemplate(
                 student.roll,
                 student.name,
-                student.group
+                student.group,
             );
 
             await sendWithAttachment(
@@ -222,7 +283,7 @@ const resendEmail = async (req, res) => {
                         path: admitCardResponse,
                     },
                     { filename: `Instructions.pdf`, path: `./must_read.pdf` },
-                ]
+                ],
             );
         }
 
@@ -303,4 +364,329 @@ const markAttendance = async (req, res) => {
     }
 };
 
-export { adminLogin, listStudents, resendEmail, adminLogout, markAttendance };
+const getDonations = async (req, res) => {
+    try {
+        const {
+            search,
+            startDate,
+            endDate,
+            minAmount,
+            maxAmount,
+            paymentMethod,
+        } = req.query;
+        let query = { isDeleted: false };
+
+        if (search) {
+            const orConditions = [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { merchantTransactionId: { $regex: search, $options: "i" } },
+            ];
+
+            if (!isNaN(search)) {
+                orConditions.push({ mobile: Number(search) });
+            }
+
+            query.$or = orConditions;
+        }
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) query.createdAt.$lte = new Date(endDate);
+        }
+
+        if (minAmount || maxAmount) {
+            query.amount = {};
+            if (minAmount) query.amount.$gte = Number(minAmount);
+            if (maxAmount) query.amount.$lte = Number(maxAmount);
+        }
+
+        if (paymentMethod) {
+            query.paymentMethod = paymentMethod;
+        }
+
+        const donations = await Donation.find(query).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: donations,
+            message: "Donations fetched successfully.",
+        });
+    } catch (error) {
+        console.error("Error fetching donations:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const createOfflineDonation = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            amount,
+            mobile,
+            paymentMethod,
+            panNumber,
+            taxBenefit,
+        } = req.body;
+
+        if (!name || !email || !amount || !mobile) {
+            return res.status(400).json({
+                success: false,
+                message: "Required fields are missing.",
+            });
+        }
+
+        const newDonation = new Donation({
+            name,
+            email,
+            amount: Number(amount),
+            mobile: Number(mobile),
+            merchantTransactionId: `OFFLINE_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            success: true,
+            createdByAdmin: true,
+            paymentMethod: paymentMethod || "cash",
+            panNumber,
+            taxBenefit: taxBenefit || false,
+            sendMail: true,
+            pgResponse: { adminCreated: true },
+        });
+
+        await newDonation.save();
+
+        const emailTemplate = donationReceiptEmailTemplate(
+            newDonation.amount,
+            newDonation.merchantTransactionId,
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
+            "N/A",
+            newDonation.name,
+            true,
+            newDonation.taxBenefit,
+        );
+
+        await sendMail(
+            newDonation.email,
+            "Donation Receipt - Satyalok",
+            `Thank you for your generous donation of INR ${newDonation.amount}.`,
+            emailTemplate,
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "Donation added successfully.",
+            data: newDonation,
+        });
+    } catch (error) {
+        console.error("Error creating offline donation:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const deleteAdminDonation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const donation = await Donation.findById(id);
+
+        if (!donation) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Donation not found." });
+        }
+
+        if (!donation.createdByAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "Can only delete admin-created donations.",
+            });
+        }
+
+        donation.isDeleted = true;
+        await donation.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Donation deleted successfully.",
+        });
+    } catch (error) {
+        console.error("Error deleting donation:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const resendDonationReceipt = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const donation = await Donation.findById(id);
+
+        if (!donation) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Donation not found." });
+        }
+
+        const emailTemplate = donationReceiptEmailTemplate(
+            donation.amount,
+            donation.merchantTransactionId,
+            new Date(donation.createdAt).toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata",
+            }),
+            donation.pgResponse?.data?.transactionId || "N/A",
+            donation.name,
+            donation.success,
+            donation.taxBenefit,
+        );
+
+        await sendMail(
+            donation.email,
+            "Donation Receipt - Satyalok",
+            `Thank you for your generous donation of INR ${donation.amount}.`,
+            emailTemplate,
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Receipt resent successfully.",
+        });
+    } catch (error) {
+        console.error("Error resending receipt:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const adminForgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Email is required." });
+    }
+
+    try {
+        const admin = await Admin.findOne({ email });
+        if (!admin) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Admin not found." });
+        }
+
+        const generatedOtp = Math.floor(
+            100000 + Math.random() * 900000,
+        ).toString();
+
+        let verificationRecord = await Verification.findOne({ email });
+
+        if (verificationRecord) {
+            verificationRecord.otp = generatedOtp;
+            verificationRecord.createdAt = Date.now();
+        } else {
+            verificationRecord = new Verification({
+                email,
+                otp: generatedOtp,
+            });
+        }
+        await verificationRecord.save();
+
+        const emailTemplate = otpEmailTemplate(generatedOtp);
+        await sendMail(
+            email,
+            "Admin Password Reset OTP - Satyalok",
+            `Your password reset OTP is ${generatedOtp}`,
+            emailTemplate,
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset OTP sent to your email.",
+        });
+    } catch (error) {
+        console.error("Forgot password error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+const adminResetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        return res
+            .status(400)
+            .json({
+                success: false,
+                message: "Email, OTP, and new password are required.",
+            });
+    }
+
+    if (newPassword.length < 6) {
+        return res
+            .status(400)
+            .json({
+                success: false,
+                message: "Password must be at least 6 characters long.",
+            });
+    }
+
+    try {
+        const verificationRecord = await Verification.findOne({ email, otp });
+
+        if (!verificationRecord) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Invalid or expired OTP." });
+        }
+
+        const admin = await Admin.findOne({ email });
+        if (!admin) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Admin not found." });
+        }
+
+        admin.password = newPassword;
+        await admin.save(); // Password will be hashed by pre-save hook
+
+        await Verification.deleteOne({ email, otp });
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset successful.",
+        });
+    } catch (error) {
+        console.error("Reset password error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
+    }
+};
+
+export {
+    adminLogin,
+    verifyAdminOTP,
+    listStudents,
+    resendEmail,
+    adminLogout,
+    markAttendance,
+    getDonations,
+    createOfflineDonation,
+    deleteAdminDonation,
+    resendDonationReceipt,
+    adminForgotPassword,
+    adminResetPassword,
+};

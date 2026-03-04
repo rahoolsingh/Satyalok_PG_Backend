@@ -2,10 +2,17 @@
 import express from "express";
 import {
     adminLogin,
+    verifyAdminOTP,
     adminLogout,
     listStudents,
     markAttendance,
     resendEmail,
+    getDonations,
+    createOfflineDonation,
+    deleteAdminDonation,
+    resendDonationReceipt,
+    adminForgotPassword,
+    adminResetPassword,
 } from "../controllers/admin.controller.js";
 import Admin from "../models/admin.model.js";
 import verifyAdmin from "../middleware/verifyAdmin.middleware.js";
@@ -13,6 +20,10 @@ import verifyAdmin from "../middleware/verifyAdmin.middleware.js";
 const router = express.Router();
 
 router.post("/login", adminLogin);
+router.post("/verify-login-otp", verifyAdminOTP);
+
+router.post("/forgot-password", adminForgotPassword);
+router.post("/reset-password", adminResetPassword);
 
 router.post("/logout", verifyAdmin, adminLogout);
 
@@ -21,6 +32,16 @@ router.get("/students", verifyAdmin, listStudents);
 router.post("/resend", verifyAdmin, resendEmail);
 
 router.post("/attendance", verifyAdmin, markAttendance);
+
+// Donation Management Routes
+router.get("/donations", verifyAdmin, getDonations);
+router.post("/donations", verifyAdmin, createOfflineDonation);
+router.delete("/donations/:id", verifyAdmin, deleteAdminDonation);
+router.post(
+    "/donations/:id/resend-receipt",
+    verifyAdmin,
+    resendDonationReceipt,
+);
 
 //get function to create a new admin
 router.post("/create", async (req, res) => {

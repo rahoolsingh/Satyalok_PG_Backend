@@ -52,7 +52,7 @@ const adminSchema = new mongoose.Schema(
     {
         timestamps: true,
         // Automatically manage createdAt and updatedAt fields
-    }
+    },
 );
 
 // remove sensitive information before json serialization
@@ -92,8 +92,8 @@ adminSchema.methods.generateAuthToken = function () {
         { _id: admin._id.toString() },
         process.env.JWT_ADMIN_SECRET,
         {
-            expiresIn: "7d", // Token expires in 7 days 
-        }
+            expiresIn: "7d", // Token expires in 7 days
+        },
     );
     return token;
 };

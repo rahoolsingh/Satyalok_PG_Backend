@@ -68,9 +68,20 @@ const donationSchema = new mongoose.Schema(
             required: true,
             default: false,
         },
-        
+        createdByAdmin: {
+            type: Boolean,
+            default: false,
+        },
+        paymentMethod: {
+            type: String,
+            default: "phonepe",
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 const Donation = mongoose.model("Donation", donationSchema);
